@@ -22,6 +22,7 @@ function defineReactive(obj,key,val){
       // 触发更新
         console.log('触发更新')
         newDep.notify()
+        observe(newVal)
       val = newVal
       
     }
@@ -65,3 +66,5 @@ setInterval(()=>{
   console.log('副作用更新',objA.a+1)
 })
 },2000)
+
+
