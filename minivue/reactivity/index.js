@@ -38,11 +38,7 @@ function ref(target) {
 function createRef(target) {
   return new Ref(target)
 }
-// let ref1 = window.ref1 = ref(0)
 
-// effectWatch(() => {
-//   console.log('ref1', ref1.value)
-// })
 function getDeps(target, key) {
   let DepsMap = globalDepMap.get(target)
 
@@ -70,9 +66,11 @@ function reactive(target) {
 
       // 执行依赖
       let deps = getDeps(target, key)
+      const result = Reflect.set(target, key, value); //这个必须要在notify之前执行。更新target[key]的值
       deps.notify()
 
-      return Reflect.set(target, key, value);
+
+      return result
     },
   });
 }
@@ -85,4 +83,17 @@ function effectWatch(fn) {
 }
 
 
+// let ref1 = window.ref1 = ref(0)
+
+// effectWatch(() => {
+//   console.log('ref1', ref1.value)
+// })
+// ref1.value += 10
+// ref1.value += 20
+// let aa = window.aa = reactive({ a: 1 })
+// effectWatch(() => {
+//   console.log('aa', aa.a)
+// })
+// aa.a = 20
+// aa.a = 30
 export { ref, effectWatch, reactive }
