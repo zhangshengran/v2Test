@@ -6,6 +6,9 @@ class Dep {
   constructor() {
     this.deps = new Set()
   }
+  depend() {
+    currentDep && this.deps.add(currentDep)
+  }
   add(dep) {
     this.deps.add(dep)
   }
@@ -38,7 +41,7 @@ function reactive(target) {
     get(target, key) {
       // 收集依赖
       let deps = getDeps(target, key)
-      currentDep && deps.add(currentDep)
+      deps.depend()
       return Reflect.get(target, key);
     },
     set(target, key, value) {
@@ -58,15 +61,17 @@ function effectWatch(fn) {
   currentDep = null
 }
 
-let ddd = window.ddd = reactive({ aaa: 123 })
-effectWatch(() => {
-  // debugger
-  console.log(`aaa值为${ddd.aaa}`)
-  let ccc = ddd.aaa + 1
-  let body = document.querySelector('body')
-  body.innerHTML = `num:${ccc}`
-})
+// let ddd = window.ddd = reactive({ aaa: 123 })
+// effectWatch(() => {
+//   // debugger
+//   console.log(`aaa值为${ddd.aaa}`)
+//   let ccc = ddd.aaa + 1
+//   let body = document.querySelector('body')
+//   body.innerHTML = `num:${ccc}`
+// })
 
 // setInterval(() => {
 //   ddd.aaa++
 // }, 1000)
+
+export { effectWatch, reactive }
