@@ -1,16 +1,12 @@
-// class Dep{
-//   constructor(){}
 
-// }
+const globalDepMap = new Map()
+let currentDep;
 class Dep {
   constructor() {
     this.deps = new Set()
   }
   depend() {
     currentDep && this.deps.add(currentDep)
-  }
-  add(dep) {
-    this.deps.add(dep)
   }
   notify() {
     this.deps.forEach(dep => {
@@ -20,6 +16,33 @@ class Dep {
   }
 }
 
+class Ref {
+  constructor(value) {
+    this._value = value
+    this.deps = new Dep()
+  }
+  get value() {
+    // 收集依赖
+    this.deps.depend()
+    return this._value
+  }
+
+  set value(value) {
+    this.deps.notify()
+    this._value = value
+  }
+}
+function ref(target) {
+  return createRef(target)
+}
+function createRef(target) {
+  return new Ref(target)
+}
+// let ref1 = window.ref1 = ref(0)
+
+// effectWatch(() => {
+//   console.log('ref1', ref1.value)
+// })
 function getDeps(target, key) {
   let DepsMap = globalDepMap.get(target)
 
@@ -34,8 +57,7 @@ function getDeps(target, key) {
   }
   return deps
 }
-const globalDepMap = new Map()
-let currentDep;
+
 function reactive(target) {
   return new Proxy(target, {
     get(target, key) {
@@ -56,22 +78,11 @@ function reactive(target) {
 }
 
 function effectWatch(fn) {
+  // debugger
   currentDep = fn
   fn()
   currentDep = null
 }
 
-// let ddd = window.ddd = reactive({ aaa: 123 })
-// effectWatch(() => {
-//   // debugger
-//   console.log(`aaa值为${ddd.aaa}`)
-//   let ccc = ddd.aaa + 1
-//   let body = document.querySelector('body')
-//   body.innerHTML = `num:${ccc}`
-// })
 
-// setInterval(() => {
-//   ddd.aaa++
-// }, 1000)
-
-export { effectWatch, reactive }
+export { ref, effectWatch, reactive }
