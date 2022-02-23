@@ -17,11 +17,27 @@ export function track(target, key) {
 export function trigger(target, key) {
   let depsMap = global.get(target)
   let deps = depsMap.get(key)
-  deps.forEach((effect) => effect())
+
+  deps.forEach((effectFn) => {
+    if (activeEffect !== effectFn) effectFn()
+    // if (effectFn.options.scheduler) {
+    //   effectFn.options.scheduler(effectFn)
+    // } else {
+    //   effectFn()
+    // }
+  })
 }
 
-export function effect(cb) {
-  activeEffect = cb;
-  cb();
-  activeEffect = null
+export function effect(cb, options = {} as any) {
+  function effectFn() {
+    activeEffect = effectFn;
+    cb()
+    activeEffect = null
+  }
+  effectFn.options = options
+  effectFn()
+
 }
+
+
+
