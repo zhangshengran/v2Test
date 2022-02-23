@@ -1,5 +1,5 @@
-import { reactive, effect } from './index'
-
+import { reactive } from './index'
+import { effect } from '../effect/index'
 test('reactive1', () => {
   let res = 0
   let c1 = { a: 1, b: { c: 123 } };
@@ -8,7 +8,7 @@ test('reactive1', () => {
     res = rec.a
   });
   rec.a++
-  expect(res).toBe(1)
+  expect(res).toBe(2)
 })
 
 test('reactive对象嵌套', () => {
@@ -16,7 +16,6 @@ test('reactive对象嵌套', () => {
   let c1 = { a: 1, b: { c: 123 } };
   let rec = reactive(c1);
   effect(() => {
-    console.log(3333)
     res = rec.b.c
   });
   rec.b.c++
