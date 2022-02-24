@@ -11,7 +11,7 @@ test('reactive1', () => {
   expect(res).toBe(2)
 })
 
-test('reactive对象嵌套', () => {
+test('对象嵌套响应式', () => {
   let res = 0
   let c1 = { a: 1, b: { c: 123 } };
   let rec = reactive(c1);
@@ -57,21 +57,23 @@ it("should observe function call chains", () => {
 test('支持effect嵌套', () => {
   let c1 = { a: 1, b: 2 };
   let rec = reactive(c1);
-  let a, b
-  effect(() => {
-    // console.log('effect1', ++rec.a)
-    a = rec.a
-    console.log('outer')
-    effect(() => {
-      console.log('nei')
-      b = rec.b
-    })
+  const effect2 = jest.fn(() => {
+    rec.b
+    // console.log('nei', rec.b)
   })
-  expect(a).toBe(1)
-  expect(b).toBe(2)
-  rec.b++
-  expect(a).toBe(1)
-  expect(b).toBe(3)
+  const effect1 = jest.fn(
+    () => {
+      rec.a
+      // console.log('outer', rec.a)
+      effect(effect2)
+    }
+  )
+  effect(effect1)
+  expect(effect1).toHaveBeenCalledTimes(1)
+  expect(effect2).toHaveBeenCalledTimes(1)
+  rec.b = 5
+  expect(effect1).toHaveBeenCalledTimes(1)
+  expect(effect2).toHaveBeenCalledTimes(2)
 })
 
 // RangeError: Maximum call stack size exceeded
@@ -87,12 +89,12 @@ test('解决无限递归', () => {
 
 test('支持优化条件选择，自动清除用不到的依赖', () => {
   const bFn = jest.fn(() => {
-    console.log('b访问')
-    console.log(rec.b)
+    // console.log('b访问')
+    rec.b
+    // console.log(rec.b)
   })
   let c1 = { a: 1, b: 2 };
   let rec = reactive(c1);
-  let b
   effect(() => {
     rec.a === 1 ? bFn() : console.log(222)
   })

@@ -1,6 +1,7 @@
 
 let global = new Map();
 let activeEffect;
+let activeEffectArr: Array<any> = []
 export function track(target, key) {
   if (activeEffect) {
     let depsMap = global.get(target)
@@ -18,28 +19,34 @@ export function track(target, key) {
 export function trigger(target, key) {
   let depsMap = global.get(target)
   let deps = depsMap.get(key)
-
+  let runDepsArr: Array<any> = []
   deps.forEach((effectFn) => {
 
-    if (activeEffect !== effectFn) effectFn()
+    if (activeEffect !== effectFn) runDepsArr.push(effectFn)
+
     // if (effectFn.options.scheduler) {
     //   effectFn.options.scheduler(effectFn)
     // } else {
     //   effectFn()
     // }
   })
+  runDepsArr.forEach(effect => effect())
 }
-function cleanup(effect) {
-  effect.deps.forEach((deps) => {
+function cleanup(effectFn) {
+  effectFn.deps.forEach((deps) => {
     deps.delete(activeEffect)
   })
+  effectFn.deps.length = 0
 }
 export function effect(cb, options = {} as any) {
   function effectFn() {
-    cleanup(effectFn)//每次执行之前，把这个副作用相关连的依赖都清掉，重新收集 。支持条件选择优化
     activeEffect = effectFn;
+    activeEffectArr.push(effectFn)
+    cleanup(effectFn)//每次执行之前，把这个副作用相关连的依赖都清掉，重新收集 。支持条件选择优化
     cb()//执行的时候会重新收集一遍依赖
-    activeEffect = null
+    activeEffectArr.pop()
+
+    activeEffect = activeEffectArr[activeEffectArr.length - 1]
   }
   effectFn.options = options
   effectFn.deps = []
