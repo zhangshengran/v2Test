@@ -1,5 +1,6 @@
 import { reactive } from './index'
-import { effect,addAsyncJob } from '../effect/index'
+import { effect, addAsyncJob } from '../effect/index'
+import { computed } from '../computed'
 test('reactive1', () => {
   let res = 0
   let c1 = { a: 1, b: { c: 123 } };
@@ -123,7 +124,7 @@ test("scheduler", (done) => {
     // Promise.resolve(() => {
     //   fn()
     // })
-    setTimeout(()=>{
+    setTimeout(() => {
       fn()
       expect(rec.a).toBe(2)
       done()
@@ -132,29 +133,29 @@ test("scheduler", (done) => {
   }
 
   effect(async () => {
-   console.log(rec.a)
+    console.log(rec.a)
   }, {
     scheduler: scheduler
   })
   // expect(scheduler).not.toHaveBeenCalled();
-   console.log(1111)
-    rec.a++
-    console.log(222)
+  console.log(1111)
+  rec.a++
+  console.log(222)
 
 })
 
-test('执行次数为一次',(done)=>{
-   let c1 = { a: 1, b: 2 };
+test('执行次数为一次', (done) => {
+  let c1 = { a: 1, b: 2 };
   let rec = reactive(c1);
 
-  const jobFn = jest.fn(()=>{
-      console.log(rec.a)
+  const jobFn = jest.fn(() => {
+    console.log(rec.a)
   })
-  effect(jobFn,{
-    scheduler:async function(fn){
-     await addAsyncJob(fn)
-     expect(jobFn).toHaveBeenCalledTimes(2)//下面更新了俩次，不算初次执行，函数只执行了一次
-     done()
+  effect(jobFn, {
+    scheduler: async function (fn) {
+      await addAsyncJob(fn)
+      expect(jobFn).toHaveBeenCalledTimes(2)//下面更新了俩次，不算初次执行，函数只执行了一次
+      done()
     }
   })
   rec.a++
@@ -162,17 +163,50 @@ test('执行次数为一次',(done)=>{
 })
 
 
-test('effect支持lazy属性，不立即执行,手动调用时才执行',()=>{
-    let c1 = { a: 1, b: 2 };
+test('effect支持lazy属性，不立即执行,手动调用时才执行', () => {
+  let c1 = { a: 1, b: 2 };
   let rec = reactive(c1);
-  let eFn = jest.fn(()=>{
+  let eFn = jest.fn(() => {
     console.log(rec.a)
   })
- let effectFn:any = effect(eFn,{
-    lazy:true
+  let effectFn: any = effect(eFn, {
+    lazy: true
   })
   expect(eFn).toHaveBeenCalledTimes(0)
   effectFn()
   expect(eFn).toHaveBeenCalledTimes(1)
+
+})
+test('获取computed的值', () => {
+  let c1 = { a: 1, b: 2 };
+  let rec = reactive(c1);
+  let eFn = jest.fn(() => {
+    console.log(rec.a)
+  })
+  expect(eFn).toHaveBeenCalledTimes(0)
+  let cm = computed(eFn)
+  cm.value
+  expect(eFn).toHaveBeenCalledTimes(1)
+
+})
+
+
+test('自执行computed', () => {
+  let c1 = { a: 1, b: 2 };
+  let rec = reactive(c1);
+  let num
+  let eFn = jest.fn(() => {
+    console.log(rec.a)
+  })
+  let cm: any = computed(() => {
+    return rec.a + rec.b
+  })
+  effect(() => {
+    // console.log('111', rec.a + cm.value)
+    num = rec.a + cm.value
+  })
+  rec.a++ //a更新了，然后computed的计算也重新执行了。
+
+  expect(num).toBe(6)
 
 })

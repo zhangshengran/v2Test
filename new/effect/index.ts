@@ -27,6 +27,7 @@ export function trigger(target, key) {
 
 
   })
+
   runDepsArr.forEach(effectFn => {
     if (effectFn.options.scheduler) {
       effectFn.options.scheduler(effectFn)
@@ -46,16 +47,17 @@ export function effect(cb, options = {} as any) {
     activeEffect = effectFn;
     activeEffectArr.push(effectFn)
     cleanup(effectFn)//每次执行之前，把这个副作用相关连的依赖都清掉，重新收集 。支持条件选择优化
-    cb()//执行的时候会重新收集一遍依赖
+    let result = cb()//执行的时候会重新收集一遍依赖
     activeEffectArr.pop()
 
     activeEffect = activeEffectArr[activeEffectArr.length - 1]
+    return result
   }
   effectFn.options = options
   effectFn.deps = []
-  if(options.lazy){
+  if (options.lazy) {
     return effectFn
-  }else{
+  } else {
     effectFn()
   }
 
@@ -67,18 +69,18 @@ const jobQueue = new Set()
 
 let isFlushing = false
 
-export function addAsyncJob(job){
+export function addAsyncJob(job) {
   jobQueue.add(job)
- return flushJob()
+  return flushJob()
 }
-export function flushJob(){
-  if(isFlushing) return
+export function flushJob() {
+  if (isFlushing) return
   isFlushing = true
- return Promise.resolve().then(()=>{
-    jobQueue.forEach((job:any)=>{
+  return Promise.resolve().then(() => {
+    jobQueue.forEach((job: any) => {
       job()
     })
-  }).finally(()=>{
-     isFlushing = false
+  }).finally(() => {
+    isFlushing = false
   })
 }
