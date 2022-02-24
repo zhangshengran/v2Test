@@ -160,3 +160,19 @@ test('执行次数为一次',(done)=>{
   rec.a++
   rec.a++
 })
+
+
+test('effect支持lazy属性，不立即执行,手动调用时才执行',()=>{
+    let c1 = { a: 1, b: 2 };
+  let rec = reactive(c1);
+  let eFn = jest.fn(()=>{
+    console.log(rec.a)
+  })
+ let effectFn:any = effect(eFn,{
+    lazy:true
+  })
+  expect(eFn).toHaveBeenCalledTimes(0)
+  effectFn()
+  expect(eFn).toHaveBeenCalledTimes(1)
+
+})

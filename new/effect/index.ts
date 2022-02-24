@@ -53,14 +53,17 @@ export function effect(cb, options = {} as any) {
   }
   effectFn.options = options
   effectFn.deps = []
-  effectFn()
+  if(options.lazy){
+    return effectFn
+  }else{
+    effectFn()
+  }
 
 }
 
 
 
 const jobQueue = new Set()
-const p = Promise.resolve()
 
 let isFlushing = false
 
