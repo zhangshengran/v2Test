@@ -85,6 +85,31 @@ test('解决无限递归', () => {
   expect(b).toBe(3)
 })
 
+test('支持优化条件选择，自动清除用不到的依赖', () => {
+  const bFn = jest.fn(() => {
+    console.log('b访问')
+    console.log(rec.b)
+  })
+  let c1 = { a: 1, b: 2 };
+  let rec = reactive(c1);
+  let b
+  effect(() => {
+    rec.a === 1 ? bFn() : console.log(222)
+  })
+  // The mock function is called 
+  // expect(bFn.mock.calls.length).toBe(2);
+  // 一开始effect会自执行一次，且rec.a===1,所有会执行bFn,bFn中访问rec.b，所b的依赖也会把effect收集进去
+  expect(bFn).toHaveBeenCalledTimes(1);
+  rec.b++
+  // b变更后，effect执行，bFn继续被调用
+  expect(bFn).toHaveBeenCalledTimes(2);
+  rec.a = 2
+  // a的值变了以后，此时再修改b的值，不应该再触发effect执行了，因为此时条件为假，b的依赖应该没有effect了。
+  expect(rec.a).toBe(2)
+  rec.b++ //所有b修改了，但是bFn没调用。完美
+  expect(bFn).toHaveBeenCalledTimes(2);
+
+})
 
 
 // test("scheduler", (done) => {
