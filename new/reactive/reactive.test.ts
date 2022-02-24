@@ -1,5 +1,5 @@
 import { reactive } from './index'
-import { effect } from '../effect/index'
+import { effect,addAsyncJob } from '../effect/index'
 test('reactive1', () => {
   let res = 0
   let c1 = { a: 1, b: { c: 123 } };
@@ -114,32 +114,49 @@ test('支持优化条件选择，自动清除用不到的依赖', () => {
 })
 
 
-// test("scheduler", (done) => {
-//   let c1 = { a: 1, b: 2 };
-//   let rec = reactive(c1);
+test("scheduler", (done) => {
+  let c1 = { a: 1, b: 2 };
+  let rec = reactive(c1);
 
 
-//   async function scheduler(fn) {
-//     // Promise.resolve(() => {
-//     //   fn()
-//     // })
-//     setTimeout(fn)
+  async function scheduler(fn) {
+    // Promise.resolve(() => {
+    //   fn()
+    // })
+    setTimeout(()=>{
+      fn()
+      expect(rec.a).toBe(2)
+      done()
+    })
 
-//   }
+  }
 
-//   effect(async () => {
-//     // expect(c1.a).toBe(2);
-//     // done()
-//   }, {
-//     scheduler: scheduler
-//   })
-//   // expect(scheduler).not.toHaveBeenCalled();
-//   console.log(1111)
-//   rec.a++
-//   expect(c1.a).toBe(1);
-//   console.log(222)
-//   expect(c1.a).toBe(2);
-//   // expect(scheduler).toHaveBeenCalledTimes(1);
+  effect(async () => {
+   console.log(rec.a)
+  }, {
+    scheduler: scheduler
+  })
+  // expect(scheduler).not.toHaveBeenCalled();
+   console.log(1111)
+    rec.a++
+    console.log(222)
 
-// })
+})
 
+test('执行次数为一次',(done)=>{
+   let c1 = { a: 1, b: 2 };
+  let rec = reactive(c1);
+
+  const jobFn = jest.fn(()=>{
+      console.log(rec.a)
+  })
+  effect(jobFn,{
+    scheduler:async function(fn){
+     await addAsyncJob(fn)
+     expect(jobFn).toHaveBeenCalledTimes(2)//下面更新了俩次，不算初次执行，函数只执行了一次
+     done()
+    }
+  })
+  rec.a++
+  rec.a++
+})

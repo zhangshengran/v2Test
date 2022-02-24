@@ -18,19 +18,22 @@ export function track(target, key) {
 }
 export function trigger(target, key) {
   let depsMap = global.get(target)
+  if (!depsMap) return
   let deps = depsMap.get(key)
   let runDepsArr: Array<any> = []
   deps.forEach((effectFn) => {
 
     if (activeEffect !== effectFn) runDepsArr.push(effectFn)
 
-    // if (effectFn.options.scheduler) {
-    //   effectFn.options.scheduler(effectFn)
-    // } else {
-    //   effectFn()
-    // }
+
   })
-  runDepsArr.forEach(effect => effect())
+  runDepsArr.forEach(effectFn => {
+    if (effectFn.options.scheduler) {
+      effectFn.options.scheduler(effectFn)
+    } else {
+      effectFn()
+    }
+  })
 }
 function cleanup(effectFn) {
   effectFn.deps.forEach((deps) => {
@@ -56,3 +59,23 @@ export function effect(cb, options = {} as any) {
 
 
 
+const jobQueue = new Set()
+const p = Promise.resolve()
+
+let isFlushing = false
+
+export function addAsyncJob(job){
+  jobQueue.add(job)
+ return flushJob()
+}
+export function flushJob(){
+  if(isFlushing) return
+  isFlushing = true
+ return Promise.resolve().then(()=>{
+    jobQueue.forEach((job:any)=>{
+      job()
+    })
+  }).finally(()=>{
+     isFlushing = false
+  })
+}
