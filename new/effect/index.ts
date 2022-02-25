@@ -55,6 +55,7 @@ export function effect(cb, options = {} as any) {
   }
   effectFn.options = options
   effectFn.deps = []
+  effectFn.fn = cb
   if (options.lazy) {
     return effectFn
   } else {
