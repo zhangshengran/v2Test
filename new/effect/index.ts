@@ -20,6 +20,7 @@ export function trigger(target, key) {
   let depsMap = global.get(target)
   if (!depsMap) return
   let deps = depsMap.get(key)
+  if (!deps) return
   let runDepsArr: Array<any> = []
   deps.forEach((effectFn) => {
 

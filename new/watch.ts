@@ -1,8 +1,14 @@
 import { effect } from './effect'
 export function watch(target, cb) {
+
   effect(() => {
-    // 遍历所有Key
-    tranverse(target)
+    if (typeof target === 'function') {
+      target()
+    } else {
+      // 遍历所有Key
+      tranverse(target)
+    }
+
   }, {
     scheduler: (fn) => {
       cb()

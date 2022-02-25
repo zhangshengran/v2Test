@@ -14,3 +14,17 @@ test('watch', () => {
   rec.b++
   expect(mockFn).toBeCalledTimes(2)
 })
+
+test('watch支持只监听一个值', () => {
+  let c1 = { a: 1, b: 2 };
+  let rec = reactive(c1);
+  const mockFn = jest.fn(() => {
+    console.log('watch执行啦')
+  })
+  watch(() => rec.a, mockFn)
+  expect(mockFn).toBeCalledTimes(0)
+  rec.a++
+  expect(mockFn).toBeCalledTimes(1)//执行
+  rec.b++
+  expect(mockFn).toBeCalledTimes(1) //不执行
+})
