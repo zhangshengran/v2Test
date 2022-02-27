@@ -1,19 +1,25 @@
 import { effect } from './effect'
 export function watch(target, cb) {
-
-  effect(() => {
+  let oldValue
+  let newValue
+  const effectFn: any = effect(() => {
     if (typeof target === 'function') {
-      target()
+      return target()
     } else {
       // 遍历所有Key
-      tranverse(target)
+      return tranverse(target)
     }
 
   }, {
+    lazy: true,//懒执行
     scheduler: (fn) => {
-      cb()
+      // 当每次effect更新的时候，重新计算effect
+      newValue = effectFn()
+      cb(oldValue, newValue)
+      oldValue = newValue
     }
   })
+  oldValue = effectFn()
 }
 
 /**
@@ -30,4 +36,5 @@ function tranverse(target, seen = new Set()) {
     let v = target[key]
     tranverse(v)
   }
+  return target
 }
