@@ -1,25 +1,33 @@
 import { effect } from './effect'
-export function watch(target, cb) {
+export function watch(target, cb, options: any = {}) {
+  let getter;
+  if (typeof target === 'function') {
+    getter = target
+  } else {
+    // 遍历所有Key
+    getter = () => tranverse(target)
+  }
+
   let oldValue
   let newValue
-  const effectFn: any = effect(() => {
-    if (typeof target === 'function') {
-      return target()
-    } else {
-      // 遍历所有Key
-      return tranverse(target)
-    }
+  const job = () => {
+    newValue = effectFn()
+    cb(oldValue, newValue)
+    oldValue = newValue
+  }
 
+  const effectFn: any = effect(() => {
+    return getter()
   }, {
-    lazy: true,//懒执行
-    scheduler: (fn) => {
-      // 当每次effect更新的时候，重新计算effect
-      newValue = effectFn()
-      cb(oldValue, newValue)
-      oldValue = newValue
-    }
+    lazy: true,
+    scheduler: job
   })
-  oldValue = effectFn()
+  if (options.immediate) {
+    job()
+  } else {
+    oldValue = effectFn()
+
+  }
 }
 
 /**
