@@ -61,3 +61,38 @@ test('立即执行的watch', () => {
 
 
 })
+
+
+
+test('watch支持配置回调的执行时机', (done) => {
+  let c1 = { a: 1, b: 2 };
+  let rec = reactive(c1);
+
+  let num = 0
+
+  const mockFn = jest.fn((oldVal, newVal) => {
+    // console.log('watch执行啦', oldVal, newVal)
+    console.log('调用三')
+    num += 2
+
+  })
+
+  function testA() {
+    console.log('调用一')
+    num += 3
+  }
+  function testB() {
+    console.log('调用二')
+    num += 5
+  }
+  watch(() => rec.a, mockFn, { flush: 'post' })//同步代码执行完 后调用
+  rec.a++//先执行了回调，但是值没加2，先加完同步代码后才执行的加2
+  testA()
+  expect(num).toBe(3)
+  testB()
+  expect(num).toBe(8)
+  setTimeout(() => {
+    expect(num).toBe(10)
+    done()
+  }, 1000)
+})

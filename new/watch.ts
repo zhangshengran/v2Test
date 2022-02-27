@@ -11,9 +11,26 @@ export function watch(target, cb, options: any = {}) {
   let oldValue
   let newValue
   const job = () => {
-    newValue = effectFn()
-    cb(oldValue, newValue)
-    oldValue = newValue
+    if (options.flush) {
+      switch (options.flush) {
+        case 'post':
+          let p = Promise.resolve()
+          p.then(() => {
+            newValue = effectFn()
+            cb(oldValue, newValue)
+            oldValue = newValue
+          })
+      }
+    } else {
+      newValue = effectFn()
+      cb(oldValue, newValue)
+      oldValue = newValue
+
+    }
+
+
+
+
   }
 
   const effectFn: any = effect(() => {
