@@ -10,20 +10,27 @@ export function watch(target, cb, options: any = {}) {
 
   let oldValue
   let newValue
+  let cleanUp
+  function onInvalidete(fn) {
+    cleanUp = fn
+  }
   const job = () => {
+    if (cleanUp) {
+      cleanUp()
+    }
     if (options.flush) {
       switch (options.flush) {
         case 'post':
           let p = Promise.resolve()
           p.then(() => {
             newValue = effectFn()
-            cb(oldValue, newValue)
+            cb(oldValue, newValue, onInvalidete)
             oldValue = newValue
           })
       }
     } else {
       newValue = effectFn()
-      cb(oldValue, newValue)
+      cb(oldValue, newValue, onInvalidete)
       oldValue = newValue
 
     }

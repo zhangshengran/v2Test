@@ -25,6 +25,6 @@
   "dependencies": {
     "@types/jest": "^27.4.0",
     "babel-jest": "^27.5.1",
-    "vue": "^3.2.29"
+    "vue": "^3.2.31"
   }
 }

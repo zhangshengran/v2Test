@@ -96,3 +96,62 @@ test('watch支持配置回调的执行时机', (done) => {
     done()
   }, 1000)
 })
+
+
+/**
+ * 描述  传入一个时间，到点后返回值 ，模拟ajax
+ * @author zhangshengran
+ * @date 2022-02-28
+ * @param {any} delayTime
+ * @returns {any}
+ */
+function ajaxMock(delayTime) {
+
+  return new Promise((res) => {
+
+    setTimeout(() => {
+      res('ok' + delayTime)
+    }, delayTime);
+  })
+}
+
+test('watch支持onInvalidate', (done) => {
+  let count = 0
+  function fetch() {
+    count++
+    const res = count === 1 ? 'A' : 'B'
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve(res)
+      }, count === 1 ? 1000 : 100);
+    })
+  }
+
+  let finallyData
+  let c1 = { a: 1, b: 2 };
+  let rec = reactive(c1);
+
+  watch(() => rec.a, async (newVal, oldVal, onInvalidate) => {
+    let valid = true
+    // 这个onInvalidate的关键是只要闭包没释放时，谁最先返回结果了，谁就会把闭包的变量修改掉，然后再
+    // 执行的时候变量已经变了，故被淘汰。相当于是个锁
+    onInvalidate(() => {
+      valid = false
+    })
+    const res = await fetch()
+
+    if (!valid) return
+
+    finallyData = res
+    console.log(finallyData)
+  })
+
+  rec.a++
+  setTimeout(() => {
+    rec.a++
+  }, 200);
+  setTimeout(() => {
+    expect(finallyData).toBe('B')
+    done()
+  }, 2000);
+})
