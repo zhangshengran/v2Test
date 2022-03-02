@@ -26,7 +26,13 @@ export function reactive(obj) {
       track(target, ITERATE_KEY)
       return Reflect.ownKeys(target)
       // 拿不到 具体访问的key
-    }
+    },
+    deleteProperty(target, key) {
+
+      return Reflect.deleteProperty(target, key)
+      // 删除操作代理 判断删除的是否是自己身上的key，不是则不处理
+      // 删除的时候，要出发 for in的依赖
+    },
 
   });
 }
