@@ -1,4 +1,4 @@
-
+import { ITERATE_KEY } from '../reactive'
 let global = new Map();
 let activeEffect;
 let activeEffectArr: Array<any> = []
@@ -20,13 +20,14 @@ export function trigger(target, key) {
   let depsMap = global.get(target)
   if (!depsMap) return
   let deps = depsMap.get(key)
-  if (!deps) return
   let runDepsArr: Array<any> = []
-  deps.forEach((effectFn) => {
-
+  let iterateEffects = depsMap.get(ITERATE_KEY)
+  iterateEffects && iterateEffects.forEach((effectFn) => {
     if (activeEffect !== effectFn) runDepsArr.push(effectFn)
-
-
+  })
+  deps && deps.forEach((effectFn) => {
+    // 这里的判断时为了解除循环执行
+    if (activeEffect !== effectFn) runDepsArr.push(effectFn)
   })
 
   runDepsArr.forEach(effectFn => {

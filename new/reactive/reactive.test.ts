@@ -238,3 +238,29 @@ test('scheduler逻辑测试', () => {
   expect(efn).toBeCalledTimes(3)
   // expect(num).toBe(4)
 })
+
+
+test('in操作符代理', () => {
+  let c1 = { a: 1, b: 2 };
+  let rec = reactive(c1);
+  const efn = jest.fn(() => {
+    1 in rec
+  })
+  effect(efn)
+  expect(efn).toBeCalledTimes(1)
+})
+
+test('for in操作符代理', () => {
+  let c1 = { a: 1, b: 2 };
+  let rec = reactive(c1);
+  const efn = jest.fn(() => {
+    for (const key in rec) {
+      console.log(key)
+    }
+  })
+  effect(efn)
+  rec.a++
+  rec.c = 123
+  // 添加新值后，会触发上述遍历会把c也遍历出来
+  expect(efn).toBeCalledTimes(3)
+})
