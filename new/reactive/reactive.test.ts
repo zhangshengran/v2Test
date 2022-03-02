@@ -264,3 +264,18 @@ test('for in操作符代理', () => {
   // 添加新值后，会触发上述遍历会把c也遍历出来
   expect(efn).toBeCalledTimes(3)
 })
+
+test('delete 测试', () => {
+  let c1 = { a: 1, b: 2 };
+  let rec = reactive(c1);
+  const efn = jest.fn(() => {
+    for (const key in rec) {
+      console.log(key)
+    }
+  })
+
+  effect(efn)
+  delete rec.a
+  // 添加新值后，会触发上述遍历会把c也遍历出来
+  expect(efn).toBeCalledTimes(2)
+})

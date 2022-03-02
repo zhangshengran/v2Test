@@ -28,8 +28,15 @@ export function reactive(obj) {
       // 拿不到 具体访问的key
     },
     deleteProperty(target, key) {
-
-      return Reflect.deleteProperty(target, key)
+      let res
+      const isOwnKey = target.hasOwnProperty(key)
+      if (isOwnKey) {
+        res = Reflect.deleteProperty(target, key)
+      }
+      if (res === true && isOwnKey) {
+        trigger(target, key)//删除了要把 for in更新
+      }
+      return res
       // 删除操作代理 判断删除的是否是自己身上的key，不是则不处理
       // 删除的时候，要出发 for in的依赖
     },
