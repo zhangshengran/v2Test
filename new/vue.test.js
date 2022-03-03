@@ -1,4 +1,4 @@
-import { computed, effect, reactive, watch } from 'vue'
+import { computed, effect, reactive, watch, nextTick } from 'vue'
 
 test('自执行computed', () => {
   let c1 = { a: 1, b: 2 };
@@ -79,4 +79,50 @@ test('watch支持onInvalidate', (done) => {
     expect(mockFn).toBeCalledTimes(2)
     done()
   }, 1000)
+})
+
+
+test('watch支持只监听一个值', () => {
+
+  // 侦听一个 getter
+  const state = reactive({ count: 0 })
+  let mockFn = jest.fn((count, prevCount) => {
+    /* ... */
+    console.log(123)
+  })
+  watch(
+    state,
+    mockFn
+  )
+  state.count++
+  expect(mockFn).toBeCalledTimes(1)
+
+  // let c1 = { a: 1, b: 2 };
+  // let rec = reactive(c1);
+  // const mockFn = jest.fn(() => {
+  //   console.log('watch执行啦')
+  // })
+  // watch(() => rec.a, mockFn)
+  // expect(mockFn).toBeCalledTimes(0)
+  // rec.a++
+  // expect(mockFn).toBeCalledTimes(1)//执行
+  // rec.b++
+  // expect(mockFn).toBeCalledTimes(1) //不执行
+})
+
+it('test', async () => {
+  const src = reactive({
+    count: 0
+  })
+  let dummy
+  let spy = jest.fn(({ count }) => {
+    dummy = count
+    // debugger
+    console.log('ddd')
+  })
+  watch(() => src.count, spy)
+  src.count++
+  await nextTick()
+  expect(dummy).toBe(1)
+  expect(spy).toBeCalledTimes(1)
 })
