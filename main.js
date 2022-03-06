@@ -1,15 +1,17 @@
 import { reactive, effect } from "./lib/mini-vue.esm.js";
 
 function createRenderer(options) {
-  const { createElement, insert, setElementText } = options
+  const { createElement, insert, setElementText, getParent, removeChild } = options
+  // debugger
   function render(vnode, container) {
     if (vnode) {
       // 新vnode存在，和旧的一起传给 patch、
-      patch(container.vnode, vnode, container)
+      patch(container._vnode, vnode, container)
     } else {
+
       // 新的不存在，旧的存在，说明是unmount
-      if (container.vnode) {
-        unmountElement()
+      if (container._vnode) {
+        unmountElement(container._vnode)
       }
     }
   }
@@ -19,7 +21,11 @@ function createRenderer(options) {
       mountElement(n2, container)
     }
   }
-  function unmountElement() { }
+  function unmountElement(vnode) {
+    const el = vnode.el
+    let parent = getParent(el)
+    if (parent) removeChild(el, parent)
+  }
   function patchProps(el, key, preVal, nextVal) {
     function shouldSetAsProps(el, key, value) {
       //  这个函数用来确认一个Props是否应该使用setAttribute设置，比如form 
@@ -40,7 +46,7 @@ function createRenderer(options) {
   }
   function mountElement(vnode, container) {
     // 创建dom元素
-    let el = createElement(vnode.type)
+    let el = vnode.el = createElement(vnode.type)
     if (vnode.props) {
 
       Object.keys(vnode.props).forEach((key) => {
@@ -63,6 +69,7 @@ function createRenderer(options) {
       }
     }
     insert(el, container)
+    container._vnode = vnode
   }
 
   return { render }
@@ -72,8 +79,14 @@ const render = createRenderer({
   createElement(tag) {
     return document.createElement(tag)
   },
+  getParent(el) {
+    return el.parentElement
+  },
   setElementText(el, text) {
     el.textContent = text
+  },
+  removeChild(el, parent) {
+    parent.removeChild(el)
   },
   insert(el, parent, anchor = null) {
     parent.insertBefore(el, anchor)
@@ -84,7 +97,7 @@ let rea = reactive({ a: 1 })
 let vnode = {
   type: 'h1',
   props: {
-    id: '123',
+    id: rea.a,
     class: "aa"
   },
   children: [
@@ -95,6 +108,7 @@ let vnode = {
 effect(() => {
   render(vnode, document.querySelector('#app'))
 })
-setInterval(() => {
-  rea.a++
-}, 1000)
+// setTimeout(() => {
+//   debugger
+//   render(null, document.querySelector('#app'))
+// }, 1000);
