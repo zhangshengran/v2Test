@@ -20,15 +20,46 @@ function createRenderer(options) {
     }
   }
   function unmountElement() { }
+  function patchProps(el, key, preVal, nextVal) {
+    function shouldSetAsProps(el, key, value) {
+      //  这个函数用来确认一个Props是否应该使用setAttribute设置，比如form 
+      if (key === 'form' && el.tagName === 'INPUT') return false
+      return key in el
+    }
+    // 这里还应该对class和style做专门的优化，提高性能
+    if (shouldSetAsProps(el, key, nextVal)) {
+      const type = typeof el[key]
+      if (type === 'boolean' && nextVal === '') {
+        el[key] = true
+      } else {
+        el[key] = nextVal
+      }
+    } else {
+      el.setAttribute(key, nextVal)
+    }
+  }
   function mountElement(vnode, container) {
     // 创建dom元素
     let el = createElement(vnode.type)
+    if (vnode.props) {
+
+      Object.keys(vnode.props).forEach((key) => {
+        // el[key] = vnode.props[key]
+        let value = vnode.props[key]
+        patchProps(el, key, null, value)
+        el.setAttribute(key, vnode.props[key])
+      })
+    }
     // 处理children
     if (vnode.children) {
       if (typeof vnode.children === 'string') {
         setElementText(el, vnode.children)
       } else if (Array.isArray(vnode.children)) {
         // 循环遍历然后挂载
+        vnode.children.forEach((vnode) => {
+          mountElement(vnode, el)
+        })
+
       }
     }
     insert(el, container)
@@ -52,7 +83,14 @@ let rea = reactive({ a: 1 })
 
 let vnode = {
   type: 'h1',
-  children: 'hello'
+  props: {
+    id: '123',
+    class: "aa"
+  },
+  children: [
+    { type: 'h2', children: 'h2' },
+    { type: 'h3', children: 'h3' }
+  ]
 }
 effect(() => {
   render(vnode, document.querySelector('#app'))
