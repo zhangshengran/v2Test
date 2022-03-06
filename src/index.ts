@@ -1,6 +1,8 @@
 export { reactive } from './reactive/index'
-// import { effect, addAsyncJob } from './effect/index.ts'
-// import { computed } from './computed/index.ts'
-
+export { effect, addAsyncJob } from './effect'
+export { computed } from './computed/index'
+export { ref } from './ref/index'
 // export reactive
 // export * from "./runtime-dom";
+
+// console.log(123)

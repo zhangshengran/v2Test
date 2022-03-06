@@ -19,11 +19,11 @@ export default {
     sourceMaps(),
   ],
   output: [
-    // {
-    //   format: "cjs",
-    //   file: pkg.main,
-    //   sourcemap: true,
-    // },
+    {
+      format: "cjs",
+      file: pkg.main,
+      sourcemap: true,
+    },
     {
       name: "vue",
       format: "es",

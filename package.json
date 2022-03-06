@@ -6,6 +6,7 @@
   "module": "lib/mini-vue.esm.js",
   "scripts": {
     "build": "rollup -c",
+    "dev": "rollup -c --watch",
     "build:type": "tsc -p ./tsconfig.type.json",
     "test": "jest --no-cache"
   },
