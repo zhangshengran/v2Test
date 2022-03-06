@@ -1,5 +1,5 @@
 import { watch } from './watch'
-import { reactive } from './reactive'
+import { reactive } from '../reactive/index'
 //watch最基础用法， 接收一个响应式对象，当里边有值变化，调用传入的回调函数
 test('watch', () => {
   let c1 = { a: 1, b: 2 };

@@ -1,4 +1,4 @@
-import { effect } from './effect'
+import { effect } from '../effect/index'
 export function watch(target, cb, options: any = {}) {
   let getter;
   if (typeof target === 'function') {
