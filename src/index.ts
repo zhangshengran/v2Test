@@ -51,7 +51,64 @@ function createRenderer(options) {
     }
 
   }
-  function patchElement(n1, n2) { }
+  function patchElement(n1, n2) {
+    // 到这里边表示是同一种元素，比如都是P标签
+    const el = n2.el = n1.el //把el交给新vnode
+    const oldProps = n1.props
+    const newProps = n2.props
+    // 先更新props
+
+    Object.keys(newProps).forEach((key) => {
+      if (newProps[key] !== oldProps[key]) {
+        patchProps(el, key, oldProps, newProps)
+      }
+    })
+    patchChildren(n1, n2, el)
+  }
+  function patchChildren(n1, n2, container) {
+    // debugger
+    // 再更新children  有可能是 null string  array
+    if (typeof n2.children === 'string') {
+      if (Array.isArray(n1.children)) {
+        // 如果旧的是数组，需要逐个卸载掉
+        n1.children.forEach(child => {
+          unmountElement(child)
+        });
+      }
+      // 其他时候，不管是null还是string,都直接设置成text就行
+      setElementText(container, n2.children)
+    } else if (Array.isArray(n2.children)) {
+      // debugger
+      // 如果新child是数组
+      if (Array.isArray(n1.children)) {
+        // 新旧都是list  就是diff算法了
+        n1.children.forEach(child => {
+          unmountElement(child)
+        });
+        n2.children.forEach(child => {
+          patch(null, child, container)
+        });
+      } else {
+        // 其他情况，不管n1 children是null还是 string、直接清空，然后挂载n2 children就可以了
+        setElementText(container, '')
+        n2.children.forEach(child => {
+          patch(null, child, container)
+        });
+
+      }
+    } else {
+      // n2 children是null
+      if (Array.isArray(n1.children)) {
+        // 如果旧的是数组，需要逐个卸载掉
+        n1.children.forEach(child => {
+          unmountElement(child)
+        });
+      } else {
+        setElementText(container, '')
+      }
+
+    }
+  }
   function unmountElement(vnode) {
     const el = vnode.el
     let parent = getParent(el)
@@ -176,16 +233,17 @@ let vnode2 = {
     class: "aa",
 
   },
+  // children: '44'
   children: [
     { type: 'h2', children: 'h2' },
-    { type: 'h3', children: 'h3' }
+    { type: 'h3', children: '33333' }
   ]
 }
 effect(() => {
   // debugger
   render(vnode, document.querySelector('#app'))
 })
-// setTimeout(() => {
-//   // debugger
-//   render(vnode2, document.querySelector('#app'))
-// }, 1000);
+setTimeout(() => {
+  // debugger
+  render(vnode2, document.querySelector('#app'))
+}, 1000);
