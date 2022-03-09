@@ -58,11 +58,11 @@ function createRenderer(options) {
     const newProps = n2.props
     // 先更新props
 
-    Object.keys(newProps).forEach((key) => {
-      if (newProps[key] !== oldProps[key]) {
-        patchProps(el, key, oldProps, newProps)
-      }
-    })
+    // Object.keys(newProps).forEach((key) => {
+    //   if (newProps[key] !== oldProps[key]) {
+    //     patchProps(el, key, oldProps, newProps)
+    //   }
+    // })
     patchChildren(n1, n2, el)
   }
   function patchChildren(n1, n2, container) {
@@ -82,12 +82,43 @@ function createRenderer(options) {
       // 如果新child是数组
       if (Array.isArray(n1.children)) {
         // 新旧都是list  就是diff算法了
-        n1.children.forEach(child => {
-          unmountElement(child)
-        });
-        n2.children.forEach(child => {
-          patch(null, child, container)
-        });
+        // n1.children.forEach(child => {
+        //   unmountElement(child)
+        // });
+        // n2.children.forEach(child => {
+        //   patch(null, child, container)
+        // });
+        let maxIndex = 0
+        const newChildren = n2.children
+        const oldChildren = n1.children
+        for (let i = 0; i < newChildren.length; i++) {
+          let newNode = newChildren[i]
+          let find = false //是否找到
+          for (let j = 0; j < oldChildren.length; j++) {
+            let oldNode = oldChildren[j]
+            // debugger
+            if (newNode.key === oldNode.key) {
+              // 找到了
+              newNode.el = oldNode.el
+              if (j < maxIndex) {
+                patch(oldNode, newNode, container)
+                // 向后挪位置
+                // 获取前一个元素
+                const preVnode = newChildren[i - 1]
+                const anchor = preVnode.el.nextSibling
+                find = true
+                insert(oldNode.el, container, anchor)
+              } else {
+                // 不用动
+                maxIndex = j
+              }
+            }
+          }
+          if (find === false) {
+            // 没找到
+          }
+        }
+
       } else {
         // 其他情况，不管n1 children是null还是 string、直接清空，然后挂载n2 children就可以了
         setElementText(container, '')
@@ -167,6 +198,7 @@ function createRenderer(options) {
         // el[key] = vnode.props[key]
         let value = vnode.props[key]
         patchProps(el, key, null, value)
+
         el.setAttribute(key, vnode.props[key])
       })
     }
@@ -184,6 +216,7 @@ function createRenderer(options) {
     }
     insert(el, container)
     container._vnode = vnode
+
   }
 
   return { render }
@@ -221,8 +254,10 @@ let vnode = {
     }
   },
   children: [
-    { type: 'h2', children: 'h2' },
-    { type: 'h3', children: 'h3' }
+    { type: 'h2', children: 'h2', key: 0 },
+    { type: 'h3', children: 'h3', key: 1 },
+    { type: 'h4', children: 'h4', key: 2 }
+
   ]
 }
 
@@ -235,8 +270,9 @@ let vnode2 = {
   },
   // children: '44'
   children: [
-    { type: 'h2', children: 'h2' },
-    { type: 'h3', children: '33333' }
+    { type: 'h4', children: 'h4', key: 2 },
+    { type: 'h3', children: 'h3', key: 1 },
+    { type: 'h2', children: 'h2', key: 0 }
   ]
 }
 effect(() => {
@@ -246,4 +282,4 @@ effect(() => {
 setTimeout(() => {
   // debugger
   render(vnode2, document.querySelector('#app'))
-}, 1000);
+}, 3000);
