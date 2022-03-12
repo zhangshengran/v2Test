@@ -32,7 +32,7 @@ function createRenderer(options) {
       }
     }
   }
-  function patch(n1, n2, container) {
+  function patch(n1, n2, container, anchor?) {
     if (n1 && n1.type !== n2.type) {
       // 如果俩个type都在，但是类型不一样，比如一个是p 一个是div，先卸载
       unmountElement(n1)
@@ -42,7 +42,7 @@ function createRenderer(options) {
     if (typeof type === 'string') {
       if (!n1) {
         // 旧vnode不存在，说明是创建并挂载
-        mountElement(n2, container)
+        mountElement(n2, container, anchor)
       } else {
         patchElement(n1, n2)
       }
@@ -93,20 +93,23 @@ function createRenderer(options) {
         const oldChildren = n1.children
         for (let i = 0; i < newChildren.length; i++) {
           let newNode = newChildren[i]
+          // debugger
           let find = false //是否找到
           for (let j = 0; j < oldChildren.length; j++) {
             let oldNode = oldChildren[j]
             // debugger
             if (newNode.key === oldNode.key) {
               // 找到了
+              // debugger
               newNode.el = oldNode.el
+              find = true
               if (j < maxIndex) {
                 patch(oldNode, newNode, container)
                 // 向后挪位置
                 // 获取前一个元素
                 const preVnode = newChildren[i - 1]
                 const anchor = preVnode.el.nextSibling
-                find = true
+
                 insert(oldNode.el, container, anchor)
               } else {
                 // 不用动
@@ -116,7 +119,23 @@ function createRenderer(options) {
           }
           if (find === false) {
             // 没找到
+            // debugger
+            let preNode = newChildren[i - 1]
+            if (preNode) {
+              // 有前一个节点，获取，然后后边插入
+              patch(null, newNode, container, preNode.el.nextSibling)
+            } else {
+              // 是第一个节点
+              patch(null, newNode, container, oldChildren[0].el.nextSibling)
+
+            }
           }
+        }
+        // 得把剩下的旧的都卸载掉
+        for (let j = 0; j < oldChildren.length; j++) {
+          let oldchild = oldChildren[j]
+          let find = newChildren.find(newChild => newChild.key === oldchild.key)
+          if (!find) unmountElement(oldchild)
         }
 
       } else {
@@ -145,7 +164,7 @@ function createRenderer(options) {
     let parent = getParent(el)
     if (parent) removeChild(el, parent)
   }
-  function patchProps(el: HTMLElement, key, preVal, nextVal) {
+  function patchProps(el: HTMLElement extends any, key, preVal, nextVal) {
     if (/^on/.test(key)) {
       // 已on开头的属性，当做绑定的函数处理
       // debugger
@@ -189,7 +208,7 @@ function createRenderer(options) {
       el.setAttribute(key, nextVal)
     }
   }
-  function mountElement(vnode, container) {
+  function mountElement(vnode, container, anchor?) {
     // 创建dom元素
     let el = vnode.el = createElement(vnode.type)
     if (vnode.props) {
@@ -209,12 +228,12 @@ function createRenderer(options) {
       } else if (Array.isArray(vnode.children)) {
         // 循环遍历然后挂载
         vnode.children.forEach((vnode) => {
-          mountElement(vnode, el)
+          mountElement(vnode, el, anchor)
         })
 
       }
     }
-    insert(el, container)
+    insert(el, container, anchor)
     container._vnode = vnode
 
   }
@@ -270,9 +289,12 @@ let vnode2 = {
   },
   // children: '44'
   children: [
+    { type: 'h5', children: 'h5', key: 3 },
+
     { type: 'h4', children: 'h4', key: 2 },
+
     { type: 'h3', children: 'h3', key: 1 },
-    { type: 'h2', children: 'h2', key: 0 }
+    // { type: 'h2', children: 'h2', key: 0 }
   ]
 }
 effect(() => {
@@ -282,4 +304,4 @@ effect(() => {
 setTimeout(() => {
   // debugger
   render(vnode2, document.querySelector('#app'))
-}, 3000);
+}, 1000);
