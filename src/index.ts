@@ -81,6 +81,8 @@ function createRenderer(options) {
       // debugger
       // 如果新child是数组
       if (Array.isArray(n1.children)) {
+        // debugger
+        diffChildren(n1.children, n2.children, container)
         // 新旧都是list  就是diff算法了
         // n1.children.forEach(child => {
         //   unmountElement(child)
@@ -88,55 +90,55 @@ function createRenderer(options) {
         // n2.children.forEach(child => {
         //   patch(null, child, container)
         // });
-        let maxIndex = 0
-        const newChildren = n2.children
-        const oldChildren = n1.children
-        for (let i = 0; i < newChildren.length; i++) {
-          let newNode = newChildren[i]
-          // debugger
-          let find = false //是否找到
-          for (let j = 0; j < oldChildren.length; j++) {
-            let oldNode = oldChildren[j]
-            // debugger
-            if (newNode.key === oldNode.key) {
-              // 找到了
-              // debugger
-              newNode.el = oldNode.el
-              find = true
-              if (j < maxIndex) {
-                patch(oldNode, newNode, container)
-                // 向后挪位置
-                // 获取前一个元素
-                const preVnode = newChildren[i - 1]
-                const anchor = preVnode.el.nextSibling
+        // let maxIndex = 0
+        // const newChildren = n2.children
+        // const oldChildren = n1.children
+        // for (let i = 0; i < newChildren.length; i++) {
+        //   let newNode = newChildren[i]
+        //   // debugger
+        //   let find = false //是否找到
+        //   for (let j = 0; j < oldChildren.length; j++) {
+        //     let oldNode = oldChildren[j]
+        //     // debugger
+        //     if (newNode.key === oldNode.key) {
+        //       // 找到了
+        //       // debugger
+        //       newNode.el = oldNode.el
+        //       find = true
+        //       if (j < maxIndex) {
+        //         patch(oldNode, newNode, container)
+        //         // 向后挪位置
+        //         // 获取前一个元素
+        //         const preVnode = newChildren[i - 1]
+        //         const anchor = preVnode.el.nextSibling
 
-                insert(oldNode.el, container, anchor)
-              } else {
-                // 不用动
-                maxIndex = j
-              }
-            }
-          }
-          if (find === false) {
-            // 没找到
-            // debugger
-            let preNode = newChildren[i - 1]
-            if (preNode) {
-              // 有前一个节点，获取，然后后边插入
-              patch(null, newNode, container, preNode.el.nextSibling)
-            } else {
-              // 是第一个节点
-              patch(null, newNode, container, oldChildren[0].el.nextSibling)
+        //         insert(oldNode.el, container, anchor)
+        //       } else {
+        //         // 不用动
+        //         maxIndex = j
+        //       }
+        //     }
+        //   }
+        //   if (find === false) {
+        //     // 没找到
+        //     // debugger
+        //     let preNode = newChildren[i - 1]
+        //     if (preNode) {
+        //       // 有前一个节点，获取，然后后边插入
+        //       patch(null, newNode, container, preNode.el.nextSibling)
+        //     } else {
+        //       // 是第一个节点
+        //       patch(null, newNode, container, oldChildren[0].el.nextSibling)
 
-            }
-          }
-        }
-        // 得把剩下的旧的都卸载掉
-        for (let j = 0; j < oldChildren.length; j++) {
-          let oldchild = oldChildren[j]
-          let find = newChildren.find(newChild => newChild.key === oldchild.key)
-          if (!find) unmountElement(oldchild)
-        }
+        //     }
+        //   }
+        // }
+        // // 得把剩下的旧的都卸载掉
+        // for (let j = 0; j < oldChildren.length; j++) {
+        //   let oldchild = oldChildren[j]
+        //   let find = newChildren.find(newChild => newChild.key === oldchild.key)
+        //   if (!find) unmountElement(oldchild)
+        // }
 
       } else {
         // 其他情况，不管n1 children是null还是 string、直接清空，然后挂载n2 children就可以了
@@ -158,6 +160,65 @@ function createRenderer(options) {
       }
 
     }
+  }
+  function diffChildren(oldChildren, newChildren, container) {
+    // 双端diff
+    // 四个索引
+    let newStartIndex = 0
+    let newEndIndex = newChildren.length - 1
+    let oldStartIndex = 0
+    let oldEndIndex = oldChildren.length - 1
+    while (newStartIndex <= newEndIndex && oldStartIndex <= oldEndIndex) {
+      if (!oldChildren[oldStartIndex]) {
+        oldStartIndex++
+      }
+      else if (newChildren[newStartIndex].key === oldChildren[oldStartIndex].key) {
+        // debugger
+        // 俩个头一直，不需要挪位置，只需要patch
+        patch(oldChildren[oldStartIndex], newChildren[newStartIndex], container)
+        newStartIndex++
+        oldStartIndex++
+
+      } else if (newChildren[newStartIndex].key === oldChildren[oldEndIndex].key) {
+        // 新首，旧尾，说明旧的最后一个节点，现在变成了最前
+        patch(oldChildren[oldEndIndex], newChildren[newStartIndex], container)
+
+        insert(oldChildren[oldEndIndex].el, container, oldChildren[oldStartIndex].el)
+        newStartIndex++
+        oldEndIndex--
+      }
+      else if (newChildren[newEndIndex].key === oldChildren[oldStartIndex].key) {
+        // 新尾，旧首
+        patch(oldChildren[oldStartIndex], newChildren[newEndIndex], container)
+
+        insert(oldChildren[oldStartIndex].el, container, oldChildren[oldEndIndex].el.nextSibling)
+        newEndIndex--
+        oldStartIndex++
+      } else if (newChildren[newEndIndex].key === oldChildren[oldEndIndex].key) {
+        patch(oldChildren[oldEndIndex], newChildren[newEndIndex], container)
+        oldEndIndex--
+        newEndIndex--
+      } else {
+        // 如果上面四个节点互相没有找到，则遍历旧的进行查找新队列的第一个头节点
+        const idxInOld = oldChildren.findIndex((oldChild) => {
+          return newChildren[newStartIndex].key === oldChild.key
+        })
+        if (idxInOld !== -1) {
+          patch(oldChildren[idxInOld], newChildren[newStartIndex], container)
+          insert(oldChildren[idxInOld].el, container, oldChildren[oldStartIndex].el)
+          newStartIndex++
+          oldChildren[idxInOld] = null
+        } else {
+          // 还没找到，新建
+          // debugger
+          patch(null, newChildren[newStartIndex], container, oldChildren[oldStartIndex].el)
+          newStartIndex++
+        }
+      }
+    }
+    // 新增那些新队列中没处理到的新节点
+
+    // 卸载那些新队列里边没有的旧节点
   }
   function unmountElement(vnode) {
     const el = vnode.el
@@ -273,9 +334,12 @@ let vnode = {
     }
   },
   children: [
-    { type: 'h2', children: 'h2', key: 0 },
-    { type: 'h3', children: 'h3', key: 1 },
-    { type: 'h4', children: 'h4', key: 2 }
+    { type: 'h1', children: 'h11', key: 0 },
+
+    // { type: 'h2', children: 'h22', key: 1 },
+
+    { type: 'h3', children: 'h33', key: 2 },
+    { type: 'h4', children: 'h44', key: 3 },
 
   ]
 }
@@ -289,11 +353,17 @@ let vnode2 = {
   },
   // children: '44'
   children: [
-    { type: 'h5', children: 'h5', key: 3 },
+    { type: 'h2', children: 'h22', key: 1 },
+    { type: 'h1', children: 'h11', key: 0 },
+    { type: 'h4', children: 'h44', key: 3 },
 
-    { type: 'h4', children: 'h4', key: 2 },
+    { type: 'h3', children: 'h33', key: 2 },
 
-    { type: 'h3', children: 'h3', key: 1 },
+    // { type: 'h5', children: 'h5', key: 3 },
+
+    // { type: 'h4', children: 'h4', key: 2 },
+
+    // { type: 'h3', children: 'h3', key: 1 },
     // { type: 'h2', children: 'h2', key: 0 }
   ]
 }
