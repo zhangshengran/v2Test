@@ -217,8 +217,16 @@ function createRenderer(options) {
       }
     }
     // 新增那些新队列中没处理到的新节点
-
+    while (newStartIndex <= newEndIndex) {
+      let preChildNode = newChildren[newStartIndex - 1]
+      patch(null, newChildren[newStartIndex], container, preChildNode.el.nextSibling)
+      newStartIndex++
+    }
     // 卸载那些新队列里边没有的旧节点
+    while (oldStartIndex <= oldEndIndex) {
+      unmountElement(oldChildren[oldStartIndex])
+      oldStartIndex++
+    }
   }
   function unmountElement(vnode) {
     const el = vnode.el
@@ -337,7 +345,9 @@ let vnode = {
     { type: 'h1', children: 'h11', key: 0 },
 
     // { type: 'h2', children: 'h22', key: 1 },
-
+    { type: 'div', children: 'd1', key: 4 },
+    { type: 'div', children: 'd2', key: 5 },
+    { type: 'div', children: 'd3', key: 6 },
     { type: 'h3', children: 'h33', key: 2 },
     { type: 'h4', children: 'h44', key: 3 },
 
@@ -355,6 +365,9 @@ let vnode2 = {
   children: [
     { type: 'h2', children: 'h22', key: 1 },
     { type: 'h1', children: 'h11', key: 0 },
+    // { type: 'div', children: 'd1', key: 4 },
+    // { type: 'div', children: 'd2', key: 5 },
+    // { type: 'div', children: 'd3', key: 6 },
     { type: 'h4', children: 'h44', key: 3 },
 
     { type: 'h3', children: 'h33', key: 2 },
