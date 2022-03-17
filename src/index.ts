@@ -74,14 +74,31 @@ function createRenderer(options) {
   }
   function mountComponent(vnode, container, anchor) {
     const componentOptions = vnode.type
-    const { render, data } = componentOptions
+    const { render, data, beforeCreate, mounted, created, beforeMount } = componentOptions
     const state = reactive(data())
-
+    beforeCreate && beforeCreate()
+    const instance = {
+      // 组件实例
+      isMounted: false,
+      state,
+      subTree: null
+    }
+    vnode.component = instance
+    created && created()
     effect(() => {
       console.log('effect执行')
       // 上面每次state变化，则effect重新执行，更新视图
       const subTree = render.call(state, state)
-      patch(null, subTree, container)
+      instance.subTree = subTree
+      if (instance.isMounted === true) {
+        patch(instance.subTree, subTree, container)
+        instance.subTree = subTree
+      } else {
+        beforeMount && beforeMount()
+        patch(null, subTree, container)
+        instance.isMounted = true
+        mounted && mounted()
+      }
     }, {
       scheduler: queueJob //多次同步更新，只执行最后一次
     })
@@ -371,6 +388,18 @@ let myComponents = {
   name: 'myComponents',
   data() {
     return { a: 111 }
+  },
+  beforeCreate() {
+    console.log('beforeCreate钩子')
+  },
+  created() {
+    console.log('created钩子')
+  },
+  beforeMount() {
+    console.log('beforeMount钩子')
+  },
+  mounted() {
+    console.log('mounted钩子')
   },
   render() {
     return {
