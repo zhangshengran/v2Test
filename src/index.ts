@@ -33,6 +33,7 @@ function createRenderer(options) {
     }
   }
   function patch(n1, n2, container, anchor?) {
+
     if (n1 && n1.type !== n2.type) {
       // 如果俩个type都在，但是类型不一样，比如一个是p 一个是div，先卸载
       unmountElement(n1)
@@ -46,11 +47,49 @@ function createRenderer(options) {
       } else {
         patchElement(n1, n2)
       }
-    } else if (type === 'object') {
+    } else if (typeof type === 'object') {
       // 是个组件
+      if (!n1) {
+        mountComponent(n2, container, anchor)
+      } else {
+        patchComponent(n1, n2, container, anchor)
+      }
     }
 
   }
+  const taskSet = new Set()
+  let doing = false
+  function queueJob(fn) {
+    taskSet.add(taskSet)
+
+    if (doing === false) {
+      doing = true
+      Promise.resolve().then(() => {
+        taskSet.forEach((job: any) => job())
+      })
+      taskSet.clear()
+      doing = false
+    }
+
+  }
+  function mountComponent(vnode, container, anchor) {
+    const componentOptions = vnode.type
+    const { render, data } = componentOptions
+    const state = reactive(data())
+
+    effect(() => {
+      console.log('effect执行')
+      // 上面每次state变化，则effect重新执行，更新视图
+      const subTree = render.call(state, state)
+      patch(null, subTree, container)
+    }, {
+      scheduler: queueJob //多次同步更新，只执行最后一次
+    })
+    // state.a++
+    // state.a++
+  }
+
+  function patchComponent(n1, n2, container, anchor) { }
   function patchElement(n1, n2) {
     // 到这里边表示是同一种元素，比如都是P标签
     const el = n2.el = n1.el //把el交给新vnode
@@ -328,7 +367,18 @@ const { render } = createRenderer({
   }
 })
 let rea = reactive({ a: 1 })
-
+let myComponents = {
+  name: 'myComponents',
+  data() {
+    return { a: 111 }
+  },
+  render() {
+    return {
+      type: 'div',
+      children: '我是子组件' + this.a
+    }
+  }
+}
 let vnode = {
   type: 'h1',
   props: {
@@ -342,6 +392,8 @@ let vnode = {
     }
   },
   children: [
+
+
     { type: 'h1', children: 'h11', key: 0 },
 
     // { type: 'h2', children: 'h22', key: 1 },
@@ -363,6 +415,7 @@ let vnode2 = {
   },
   // children: '44'
   children: [
+    { type: myComponents, },
     { type: 'h2', children: 'h22', key: 1 },
     { type: 'h1', children: 'h11', key: 0 },
     // { type: 'div', children: 'd1', key: 4 },
@@ -380,11 +433,14 @@ let vnode2 = {
     // { type: 'h2', children: 'h2', key: 0 }
   ]
 }
+let vnode3 = {
+  type: myComponents
+}
 effect(() => {
   // debugger
-  render(vnode, document.querySelector('#app'))
+  render(vnode3, document.querySelector('#app'))
 })
-setTimeout(() => {
-  // debugger
-  render(vnode2, document.querySelector('#app'))
-}, 1000);
+// setTimeout(() => {
+//   // debugger
+//   render(vnode2, document.querySelector('#app'))
+// }, 1000);
