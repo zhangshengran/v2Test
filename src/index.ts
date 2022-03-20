@@ -289,7 +289,7 @@ function createRenderer(options) {
     let parent = getParent(el)
     if (parent) removeChild(el, parent)
   }
-  function patchProps(el: HTMLElement extends any, key, preVal, nextVal) {
+  function patchProps(el: HTMLElement, key, preVal, nextVal) {
     if (/^on/.test(key)) {
       // 已on开头的属性，当做绑定的函数处理
       // debugger
@@ -353,7 +353,8 @@ function createRenderer(options) {
       } else if (Array.isArray(vnode.children)) {
         // 循环遍历然后挂载
         vnode.children.forEach((vnode) => {
-          mountElement(vnode, el, anchor)
+          // debugger
+          patch(null, vnode, container, anchor)
         })
 
       }
@@ -384,6 +385,27 @@ const { render } = createRenderer({
   }
 })
 let rea = reactive({ a: 1 })
+
+let myComponent2 = {
+  name: 'myComponent2',
+  data() {
+    return { b: 222 }
+  },
+  created() {
+    console.log('created钩子：myComponent2')
+  },
+  mounted() {
+    console.log('mounted钩子：myComponent2')
+  },
+  render() {
+    return {
+      type: 'div',
+      children: `我是myComponent2${this.b}`
+    }
+  }
+}
+
+
 let myComponents = {
   name: 'myComponents',
   data() {
@@ -393,18 +415,18 @@ let myComponents = {
     console.log('beforeCreate钩子')
   },
   created() {
-    console.log('created钩子')
+    console.log('created钩子：myComponents')
   },
   beforeMount() {
     console.log('beforeMount钩子')
   },
   mounted() {
-    console.log('mounted钩子')
+    console.log('mounted钩子：myComponents')
   },
   render() {
     return {
       type: 'div',
-      children: '我是子组件' + this.a
+      children: [{ type: 'div', children: `我是子组件${this.a}` }, { type: myComponent2 }]
     }
   }
 }
