@@ -74,21 +74,68 @@ export function createRenderer(options) {
   }
   function mountComponent(vnode, container, anchor) {
     const componentOptions = vnode.type
-    const { render, data, beforeCreate, mounted, created, beforeMount } = componentOptions
+    const { render, data, beforeCreate, mounted, created, beforeMount, props: propOptions } = componentOptions
+    if (propOptions && vnode.props) {
+      const [props, attr] = resolveProps(propOptions, vnode.props)//解析attr和props,组件中声明了prop的参数为prop
+      // 没声明的当做attr处理
+      console.log(props, attr)
+      // debugger
+    }
+    function resolveProps(options, propsData) {
+      let attr = {}
+      let props = {}
+      Object.keys(propsData).forEach((key) => {
+        if (Object.keys(options).includes(key)) {
+          // 是个props
+          props[key] = propsData[key]
+        } else {
+          // 是个attr
+          attr[key] = propsData[key]
+        }
+      })
+      return [props, attr]
+    }
     const state = reactive(data())
     beforeCreate && beforeCreate()
     const instance = {
       // 组件实例
       isMounted: false,
       state,
+      props: vnode.props && reactive(vnode.props),
       subTree: null
     }
+
+    const renderContext = new Proxy(instance, {
+      get(t, k) {
+        const { state, props } = t
+        if (k in state) {
+          return Reflect.get(state, k)
+        } else if (k in props) {
+          return Reflect.get(props, k)
+        } else {
+          console.error('err')
+        }
+      },
+      set(t, k, v) {
+        const { state, props } = t
+        if (k in state) {
+          let res = Reflect.set(state, k, v)
+          return res
+        } else if (k in props) {
+          let res = Reflect.set(props, k, v)
+          return res
+        }
+      }
+    })
+
+    console.log(renderContext)
+    // debugger
     vnode.component = instance
-    created && created()
+    created && created.call(renderContext)
     effect(() => {
       console.log('effect执行')
       // 上面每次state变化，则effect重新执行，更新视图
-      const subTree = render.call(state, state)
+      const subTree = render.call(renderContext, renderContext)
       instance.subTree = subTree
       if (instance.isMounted === true) {
         patch(instance.subTree, subTree, container)
@@ -106,7 +153,27 @@ export function createRenderer(options) {
     // state.a++
   }
 
-  function patchComponent(n1, n2, container, anchor) { }
+  function patchComponent(n1, n2, container, anchor) {
+    const instance = n2.component = n1.component
+    const { props } = instance.props //旧的props
+    // 检测Props是否变了，如果没变，不用更新子组件
+    if (!hasPropsChange(n1.props, n2.props)) {
+      resolveProps
+    }
+
+    function hasPropsChange(oldProps, newProps) {
+      // 数量不等，说明变了
+      const newPropsLen = Object.keys(newProps)
+      const oldPropsLen = Object.keys(oldProps)
+      if (oldPropsLen !== newPropsLen) return true
+
+      // 检测新的里边是否有旧的没有的，如果有，说明变了
+      // 等其他情况
+    }
+
+  }
+
+
   function patchElement(n1, n2) {
     // 到这里边表示是同一种元素，比如都是P标签
     const el = n2.el = n1.el //把el交给新vnode

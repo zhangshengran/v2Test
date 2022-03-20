@@ -8,6 +8,9 @@ let myComponent2 = {
   data() {
     return { b: 222 }
   },
+  props: {
+    ppp: {}
+  },
   created() {
     console.log('created钩子：myComponent2')
   },
@@ -17,7 +20,8 @@ let myComponent2 = {
   render() {
     return {
       type: 'div',
-      children: `我是myComponent2${this.b}`
+      children: [{ type: 'div', children: `我是myComponent2${this.b}` },
+      { type: 'div', children: `我是props${this.ppp}` }]
     }
   }
 }
@@ -28,6 +32,7 @@ let myComponents = {
   data() {
     return { a: 111 }
   },
+
   beforeCreate() {
     console.log('beforeCreate钩子')
   },
@@ -43,7 +48,8 @@ let myComponents = {
   render() {
     return {
       type: 'div',
-      children: [{ type: 'div', children: `我是子组件${this.a}` }, { type: myComponent2 }]
+
+      children: [{ type: 'div', children: `我是子组件${this.a}` }, { type: myComponent2, props: { ppp: '我是props数据', }, }]
     }
   }
 }
@@ -106,7 +112,7 @@ let vnode3 = {
 }
 
 createApp(vnode3).mount(document.querySelector('#app'))
-// setTimeout(() => {
-//   // debugger
-//   render(vnode2, document.querySelector('#app'))
-// }, 1000);
+setTimeout(() => {
+  // debugger
+  // vnode3
+}, 1000);
