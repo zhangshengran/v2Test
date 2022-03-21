@@ -74,14 +74,14 @@ export function createRenderer(options) {
   }
   function mountComponent(vnode, container, anchor) {
     const componentOptions = vnode.type
-    const { render, data, beforeCreate, mounted, created, beforeMount, props: propOptions } = componentOptions
-    if (propOptions && vnode.props) {
-      const [props, attr] = resolveProps(propOptions, vnode.props)//解析attr和props,组件中声明了prop的参数为prop
-      // 没声明的当做attr处理
-      console.log(props, attr)
-      // debugger
-    }
-    function resolveProps(options, propsData) {
+    let { render, data, beforeCreate, mounted, created, beforeMount, props: propOptions, setup } = componentOptions
+    // if (propOptions && vnode.props) {
+    const [props, attrs] = resolveProps(propOptions, vnode.props)//解析attr和props,组件中声明了prop的参数为prop
+    // 没声明的当做attr处理
+    console.log(props, attrs)
+    // debugger
+    // }
+    function resolveProps(options = {}, propsData = {}) {
       let attr = {}
       let props = {}
       Object.keys(propsData).forEach((key) => {
@@ -96,7 +96,9 @@ export function createRenderer(options) {
       return [props, attr]
     }
     const state = reactive(data())
-    beforeCreate && beforeCreate()
+    // beforeCreate && beforeCreate()
+    const setupContexts = { attrs }
+
     const instance = {
       // 组件实例
       isMounted: false,
@@ -104,7 +106,16 @@ export function createRenderer(options) {
       props: vnode.props && reactive(vnode.props),
       subTree: null
     }
-
+    let setupRes
+    setup && (setupRes = setup(instance.props, setupContexts))
+    let setupState;
+    if (typeof setupRes === 'object') {
+      // 返回的是个对象，说明当做data
+      setupState = setupRes
+    } else if (typeof setupRes === 'function') {
+      // 说明是渲染函数
+      render = setupRes//覆盖原渲染函数
+    }
     const renderContext = new Proxy(instance, {
       get(t, k) {
         const { state, props } = t
@@ -112,7 +123,10 @@ export function createRenderer(options) {
           return Reflect.get(state, k)
         } else if (k in props) {
           return Reflect.get(props, k)
-        } else {
+        } else if (setupState && k in setupState) {
+          return Reflect.get(setupState, k)
+        }
+        else {
           console.error('err')
         }
       },
@@ -123,6 +137,9 @@ export function createRenderer(options) {
           return res
         } else if (k in props) {
           let res = Reflect.set(props, k, v)
+          return res
+        } else if (setupState && k in setupState) {
+          let res = Reflect.set(setupState, k, v)
           return res
         }
       }

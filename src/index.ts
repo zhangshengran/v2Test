@@ -8,6 +8,11 @@ let myComponent2 = {
   data() {
     return { b: 222 }
   },
+  setup(props) {
+    console.log('setup props', props)
+    let setupRea = reactive({ gg: 'setup' })
+    return { setupRea }
+  },
   props: {
     ppp: {}
   },
@@ -21,7 +26,9 @@ let myComponent2 = {
     return {
       type: 'div',
       children: [{ type: 'div', children: `我是myComponent2${this.b}` },
-      { type: 'div', children: `我是props${this.ppp}` }]
+      { type: 'div', children: `我是props${this.ppp}` },
+      { type: 'div', children: `我是setup数据${this.setupRea.gg}` },
+      ]
     }
   }
 }
