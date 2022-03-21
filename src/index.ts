@@ -8,9 +8,10 @@ let myComponent2 = {
   data() {
     return { b: 222 }
   },
-  setup(props) {
+  setup(props, { emit }) {
     console.log('setup props', props)
     let setupRea = reactive({ gg: 'setup' })
+    emit('emit', '我是emit数据')
     return { setupRea }
   },
   props: {
@@ -56,7 +57,8 @@ let myComponents = {
     return {
       type: 'div',
 
-      children: [{ type: 'div', children: `我是子组件${this.a}` }, { type: myComponent2, props: { ppp: '我是props数据', }, }]
+      children: [{ type: 'div', children: `我是子组件${this.a}` },
+      { type: myComponent2, props: { ppp: '我是props数据', onEmit: (e) => { console.log('触发emit', e) } }, }]
     }
   }
 }

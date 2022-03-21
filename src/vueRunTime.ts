@@ -97,7 +97,6 @@ export function createRenderer(options) {
     }
     const state = reactive(data())
     // beforeCreate && beforeCreate()
-    const setupContexts = { attrs }
 
     const instance = {
       // 组件实例
@@ -107,6 +106,18 @@ export function createRenderer(options) {
       subTree: null
     }
     let setupRes
+    function emit(event, ...args) {
+
+      const eventName = `on${event[0].toUpperCase()}${event.slice(1)}`
+      // debugger
+      let handler = instance.props[eventName]
+      if (handler) {
+        // 找到props中的事件传递参数并执行
+        handler(...args)
+      }
+    }
+    const setupContexts = { attrs, emit }
+
     setup && (setupRes = setup(instance.props, setupContexts))
     let setupState;
     if (typeof setupRes === 'object') {
